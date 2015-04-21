@@ -1,9 +1,11 @@
 var assert = require('chai').assert,
+    crypto = require('crypto'),
     BetaSeries = require('../index');
 
 describe('#valid', function() {
   var betaSeries = new BetaSeries(process.env.BETASERIES_API_KEY);
   var episodes = betaSeries.Episodes;
+  var auth = betaSeries.Auth;
 
   it('gets info about an episode', function(done) {
     var episodeId = 10;
@@ -24,6 +26,24 @@ describe('#valid', function() {
       assert(response.id == 164037, 'episode exists');
       assert(response.show.id == showId, 'show exists');
       done();
+    });
+  });
+
+  it('get list of episodes from user', function(done) {
+    var showId = 159,
+        showTitle = "Doctor Who (2005)",
+        user = {
+          login: 'dev080',
+          password: crypto.createHash("md5").update('developer').digest("hex"),
+          id: 27018 
+        };
+      
+    auth.login(user.login, user.password, function(response){
+      assert(response.user.id == user.id, 'user connected');
+      episodes.all(response.token, null, showId, null, null, function(response) {
+        assert(response[0].title == showTitle, 'got episodes from connected user');
+        done();
+      });
     });
   });
 
